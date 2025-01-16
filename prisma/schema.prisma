@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  firstName String
+  lastName  String
+  email     String     @unique
+  password  String
+  role      UserRole   @default(USER)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Watch     Watch[]
+
+  @@map("Users")
+}
+
+model Brand {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Watch     Watch[]
+}
+
+model Model {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Watch     Watch[]
+}
+
+model Watch {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  brandId    String   @db.ObjectId
+  modelId    String   @db.ObjectId
+  comment    String
+  amazonLink String
+  imageUrl   String
+  wristSize  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  brand Brand @relation(fields: [brandId], references: [id])
+  model Model @relation(fields: [modelId], references: [id])
+
+  @@map("Watchs")
+}
+
+enum UserRole {
+  ADMIN
+  SUPER_ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
