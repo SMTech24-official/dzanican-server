@@ -44,23 +44,16 @@ const loginUser = async (payload: { email: string; password: string }) => {
 };
 
 // get user profile
-const getMyProfile = async (userToken: string) => {
-  const decodedToken = jwtHelpers.verifyToken(
-    userToken,
-    config.jwt.jwt_secret!
-  );
-
+const getMyProfile = async (user: any) => {
   const userProfile = await prisma.user.findUnique({
     where: {
-      id: decodedToken.id,
+      id: user.id,
     },
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
-      profileImage: true,
-      phoneNumber: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -70,19 +63,13 @@ const getMyProfile = async (userToken: string) => {
 };
 
 // change password
-
 const changePassword = async (
-  userToken: string,
+  loggedInUser: any,
   newPassword: string,
   oldPassword: string
 ) => {
-  const decodedToken = jwtHelpers.verifyToken(
-    userToken,
-    config.jwt.jwt_secret!
-  );
-
   const user = await prisma.user.findUnique({
-    where: { id: decodedToken?.id },
+    where: { id: loggedInUser?.id },
   });
 
   if (!user) {
@@ -99,7 +86,7 @@ const changePassword = async (
 
   const result = await prisma.user.update({
     where: {
-      id: decodedToken.id,
+      id: loggedInUser.id,
     },
     data: {
       password: hashedPassword,
@@ -109,11 +96,18 @@ const changePassword = async (
 };
 
 const forgotPassword = async (payload: { email: string }) => {
-  const userData = await prisma.user.findUniqueOrThrow({
+  const userData = await prisma.user.findUnique({
     where: {
       email: payload.email,
     },
   });
+
+  if (!userData) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "User not found! with this email " + payload.email
+    );
+  }
 
   const resetPassToken = jwtHelpers.generateToken(
     { email: userData.email, role: userData.role, id: userData.id },
@@ -123,14 +117,13 @@ const forgotPassword = async (payload: { email: string }) => {
 
   const resetPassLink =
     config.reset_pass_link + `?userId=${userData.id}&token=${resetPassToken}`;
- 
 
   await emailSender(
     "Reset Your Password",
     userData.email,
     `
      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <p>Dear ${userData.name},</p>
+          <p>Dear ${userData.email},</p>
           
           <p>We received a request to reset your password. Click the button below to reset your password:</p>
           
@@ -142,7 +135,7 @@ const forgotPassword = async (payload: { email: string }) => {
           
           <p>If you did not request a password reset, please ignore this email or contact support if you have any concerns.</p>
           
-          <p>Thank you,<br>Dream 2 Drive</p>
+          <p>Thank you,<br>Site name</p>
 </div>
 
       `

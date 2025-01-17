@@ -11,9 +11,9 @@ import httpStatus from "http-status";
 
 // Create a new user in the database.
 const createUserIntoDb = async (payload: User) => {
-  const existingUser = await prisma.user.findFirst({
+  const existingUser = await prisma.user.findUnique({
     where: {
-      OR: [{ email: payload.email }, { username: payload.username }],
+      email: payload.email,
     },
   });
 
@@ -22,12 +22,6 @@ const createUserIntoDb = async (payload: User) => {
       throw new ApiError(
         400,
         `User with this email ${payload.email} already exists`
-      );
-    }
-    if (existingUser.username === payload.username) {
-      throw new ApiError(
-        400,
-        `User with this username ${payload.username} already exists`
       );
     }
   }
@@ -40,8 +34,8 @@ const createUserIntoDb = async (payload: User) => {
     data: { ...payload, password: hashedPassword },
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
       role: true,
       createdAt: true,
@@ -60,10 +54,10 @@ const getUsersFromDb = async (
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = params;
 
-  const andCondions: Prisma.UserWhereInput[] = [];
+  const andConditions: Prisma.UserWhereInput[] = [];
 
   if (params.searchTerm) {
-    andCondions.push({
+    andConditions.push({
       OR: userSearchAbleFields.map((field) => ({
         [field]: {
           contains: params.searchTerm,
@@ -74,7 +68,7 @@ const getUsersFromDb = async (
   }
 
   if (Object.keys(filterData).length > 0) {
-    andCondions.push({
+    andConditions.push({
       AND: Object.keys(filterData).map((key) => ({
         [key]: {
           equals: (filterData as any)[key],
@@ -82,10 +76,10 @@ const getUsersFromDb = async (
       })),
     });
   }
-  const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
+  const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
 
   const result = await prisma.user.findMany({
-    where: whereConditons,
+    where: whereConditions,
     skip,
     orderBy:
       options.sortBy && options.sortOrder
@@ -97,17 +91,16 @@ const getUsersFromDb = async (
           },
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
-      profileImage: true,
       role: true,
       createdAt: true,
       updatedAt: true,
     },
   });
   const total = await prisma.user.count({
-    where: whereConditons,
+    where: whereConditions,
   });
 
   if (!result || result.length === 0) {
@@ -123,7 +116,7 @@ const getUsersFromDb = async (
   };
 };
 
-// update profile by user won profile uisng token or email and id
+// update profile by user won profile using token or email and id
 const updateProfile = async (user: IUser, payload: User) => {
   const userInfo = await prisma.user.findUnique({
     where: {
@@ -142,21 +135,15 @@ const updateProfile = async (user: IUser, payload: User) => {
       email: userInfo.email,
     },
     data: {
-      name: payload.name || userInfo.name,
-      username: payload.username || userInfo.username,
       email: payload.email || userInfo.email,
-      profileImage: payload.profileImage || userInfo.profileImage,
-      phoneNumber: payload.phoneNumber || userInfo.phoneNumber,
+      firstName: payload.firstName || userInfo.firstName,
+      lastName: payload.lastName || userInfo.lastName,
     },
     select: {
       id: true,
-      name: true,
-      username: true,
-
-      
+      firstName: true,
+      lastName: true,
       email: true,
-      profileImage: true,
-      phoneNumber: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -188,10 +175,9 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
     data: payload,
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
-      profileImage: true,
       role: true,
       createdAt: true,
       updatedAt: true,

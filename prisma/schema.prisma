@@ -28,6 +28,8 @@ model Brand {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   Watch     Watch[]
+
+  @@map("Brands")
 }
 
 model Model {
@@ -36,6 +38,8 @@ model Model {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   Watch     Watch[]
+
+  @@map("Models")
 }
 
 model Watch {
@@ -54,7 +58,7 @@ model Watch {
   brand Brand @relation(fields: [brandId], references: [id])
   model Model @relation(fields: [modelId], references: [id])
 
-  @@map("Watchs")
+  @@map("Watches")
 }
 
 enum UserRole {

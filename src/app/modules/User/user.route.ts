@@ -7,24 +7,24 @@ import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
-// *!register user
+// *register user
 router.post(
   "/register",
   validateRequest(UserValidation.CreateUserValidationSchema),
   userController.createUser
 );
-// *!get all  user
+// get all  user
 router.get("/", userController.getUsers);
 
-// *!profile user
+// *profile user
 router.put(
   "/profile",
   validateRequest(UserValidation.userUpdateSchema),
-  auth(UserRole.ADMIN, UserRole.USER),
+  auth(),
   userController.updateProfile
 );
 
-// *!update  user
+// *update  user
 router.put("/:id", userController.updateUser);
 
 export const userRoutes = router;
